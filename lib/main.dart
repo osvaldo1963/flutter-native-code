@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:worker_manager/worker_manager.dart';
 
 void main() {
   runApp(MyApp());
@@ -30,6 +31,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -59,30 +61,20 @@ class _MyHomePageState extends State<MyHomePage> {
   void _getLocation() async {
     await _determinePosition();
     var position =  Geolocator.getPositionStream(desiredAccuracy: LocationAccuracy.bestForNavigation);
-    var startStream = position.listen((event) {
-      print(event.toJson());
+    position.listen((event) {
+      //print(event.toJson());
     });
 
   }
   static const platform = const MethodChannel('sample.flutter.dev/battery');
   String _batteryLevel = "unknown battery lavel ";
-  getBaterryLevel() async {
-    String batteryLevel;
-    try{
-      final int result = await platform.invokeMethod("getBatteryLevel");
-      batteryLevel = "baterry lelvel at $result";
-    } on PlatformException catch(e) {
-      batteryLevel = "Failed to get battery level: '${e.message}'.";
-    }
-    setState(() {
-      this._batteryLevel = batteryLevel;
-    });
-  }
+
+  checkPermissions() async { await _determinePosition(); }
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    this._getLocation();
+    checkPermissions();
   }
   @override
   Widget build(BuildContext context) {
@@ -101,4 +93,39 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+  getBaterryLevel() async {
+    await setworker();
+    String batteryLevel;
+    try{
+      final int result = await platform.invokeMethod("getBatteryLevel");
+      batteryLevel = "baterry lelvel at $result";
+    } on PlatformException catch(e) {
+      batteryLevel = "Failed to get battery level: '${e.message}'.";
+    }
+    setState(() {
+      this._batteryLevel = batteryLevel;
+    });
+  }
+
+}
+
+getLocation() async {
+  var currentPosition = Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
+  var position = await currentPosition;
+  print(position);
+}
+Future setworker() {
+  return Executor().execute(fun1: counter()).next(onNext: (v) {});
+}
+counter() {
+  var milisecons = Duration(seconds: 1);
+  var counter = 0;
+  new Timer.periodic(milisecons, (timer) {
+    if(timer.tick == counter + 15) {
+      counter = timer.tick;
+      print(timer.tick);
+      getLocation();
+    }
+  });
+  return;
 }
