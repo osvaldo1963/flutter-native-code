@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:worker_manager/worker_manager.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 
 void main() {
   runApp(MyApp());
@@ -32,34 +34,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  Future<Position> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permantly denied, we cannot request permissions.');
-    }
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse &&
-          permission != LocationPermission.always) {
-        return Future.error(
-            'Location permissions are denied (actual value: $permission).');
-      }
-    }
-
-    return await Geolocator.getCurrentPosition();
-  }
   void _getLocation() async {
-    await _determinePosition();
+
     var position =  Geolocator.getPositionStream(desiredAccuracy: LocationAccuracy.bestForNavigation);
     position.listen((event) {
       //print(event.toJson());
@@ -67,9 +43,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
   static const platform = const MethodChannel('sample.flutter.dev/battery');
+
   String _batteryLevel = "unknown battery lavel ";
 
-  checkPermissions() async { await _determinePosition(); }
+  checkPermissions() async {
+    print("ask for location permission");
+    var status = await Permission.locationAlways.request();
+
+  }
   @override
   void initState() {
     // TODO: implement initState
@@ -94,7 +75,30 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
   getBaterryLevel() async {
-    await setworker();
+
+    ////
+    // 2.  Configure the plugin
+    //
+
+    bg.BackgroundGeolocation.ready(bg.Config(
+        desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
+        distanceFilter: 10.0,
+        stopOnTerminate: false,
+        startOnBoot: true,
+        debug: true,
+        logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+        disableMotionActivityUpdates: true,
+        heartbeatInterval: 40,
+    )).then((bg.State state) {
+      if (!state.enabled) {
+        bg.BackgroundGeolocation.start();
+      }
+    });
+
+
+
+    /*
+    await setworker(); //isolated worker
     String batteryLevel;
     try{
       final int result = await platform.invokeMethod("getBatteryLevel");
@@ -105,8 +109,8 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       this._batteryLevel = batteryLevel;
     });
+     */
   }
-
 }
 
 getLocation() async {
