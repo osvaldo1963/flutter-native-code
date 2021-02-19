@@ -80,22 +80,30 @@ class _MyHomePageState extends State<MyHomePage> {
     ////
     // 2.  Configure the plugin
     //
-    bg.BackgroundGeolocation.onLocation((bg.Location location) {
-      print('[=================>location<=================] - ${location.odometer}');
+    bg.BackgroundGeolocation.onGeofence((location) {
+      print('[=================>location<=================] - ${location.location}');
     });
 
+    bg.BackgroundGeolocation.addGeofence(bg.Geofence(
+        identifier: "Home",
+        radius: 200,
+        latitude: 45.51921926,
+        longitude: -73.61678581,
+        notifyOnEntry: true,
+        notifyOnExit: true,
+        extras: {
+          "route_id": 1234
+        }
+    ));
     bg.BackgroundGeolocation.ready(bg.Config(
-        desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-        heartbeatInterval: 10,
-        stopOnTerminate: false,
-        startOnBoot: true,
-        debug: true,
-    )).then((state) {
-      if (!state.enabled) {
-        ////
-        // 3.  Start the plugin.
-        //
-        bg.BackgroundGeolocation.start();
+      desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+      distanceFilter: 10.0,
+      stopOnTerminate: false,
+      startOnBoot: true,
+      debug: true,
+    )).then((value) {
+      if(!value.enabled) {
+        bg.BackgroundGeolocation.startGeofences();
       }
     });
 
