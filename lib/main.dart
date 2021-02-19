@@ -56,6 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: implement initState
     super.initState();
     checkPermissions();
+    getBaterryLevel();
   }
   @override
   Widget build(BuildContext context) {
@@ -68,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(_batteryLevel),
-            FlatButton(onPressed: getBaterryLevel, child: Text("click me"))
+            FlatButton(onPressed: () {}, child: Text("click me"))
           ],
         ),
       ), // This trailing comma makes auto-formatting nicer for build methods.
@@ -79,21 +80,25 @@ class _MyHomePageState extends State<MyHomePage> {
     ////
     // 2.  Configure the plugin
     //
+    bg.BackgroundGeolocation.onLocation((bg.Location location) {
+      print('[=================>location<=================] - ${location.odometer}');
+    });
 
     bg.BackgroundGeolocation.ready(bg.Config(
-        desiredAccuracy: bg.Config.DESIRED_ACCURACY_NAVIGATION,
-        distanceFilter: 10.0,
+        desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+        heartbeatInterval: 10,
         stopOnTerminate: false,
         startOnBoot: true,
         debug: true,
-        logLevel: bg.Config.LOG_LEVEL_VERBOSE,
-        disableMotionActivityUpdates: true,
-        heartbeatInterval: 40,
-    )).then((bg.State state) {
+    )).then((state) {
       if (!state.enabled) {
+        ////
+        // 3.  Start the plugin.
+        //
         bg.BackgroundGeolocation.start();
       }
     });
+
 
 
 
